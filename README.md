@@ -1,156 +1,154 @@
-# Loan Approval Prediction App
+# 🚀 Loan Approval App
 
-A machine learning-based loan approval prediction system deployed using **Streamlit**, **Docker**, and **Google Cloud Platform (GCP)**.
+This repository contains a Machine Learning-based Loan Approval Prediction application deployed on Google Cloud Platform (GCP) using Docker and Cloud Run. It also includes a CI/CD pipeline for automated deployment using GitHub Actions.
 
-## 🛠 Tech Stack
-- **Python** (Pandas, NumPy, Scikit-learn, Streamlit)
-- **Docker**
-- **Google Cloud Run**
-- **GitHub Actions (CI/CD)**
+## ✨ Features
+- 🎨 Streamlit-based UI for user interaction
+- 🤖 Machine Learning model for loan approval prediction
+- 🐳 Dockerized application for easy deployment
+- ☁️ Google Cloud Run for serverless deployment
+- 🔄 GitHub Actions for CI/CD automation
 
-## 📌 Features
-- Train a machine learning model for loan approval.
-- Deploy using **Docker** and **Google Cloud Run**.
-- Automate deployments with **GitHub Actions**.
+## 🔧 Prerequisites
+Before starting, ensure you have the following installed:
+- 🐳 [Docker](https://www.docker.com/get-started)
+- ☁️ [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+- 🔗 [Git](https://git-scm.com/downloads)
+- 🐍 [Python 3.9+](https://www.python.org/downloads/)
+- 🖥️ [VS Code (Optional)](https://code.visualstudio.com/)
 
----
+## 🏗️ Project Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/akshayy-ai/loan-approval-app.git
+   cd loan-approval-app
+   ```
+2. Create a virtual environment and activate it:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## 🚀 Setup Instructions
+## 🐳 Docker Setup & Deployment on GCP
+1. Authenticate with GCP:
+   ```bash
+   gcloud auth login
+   gcloud config set project [PROJECT_ID]
+   ```
+2. Enable required services:
+   ```bash
+   gcloud services enable run.googleapis.com artifactregistry.googleapis.com
+   ```
+3. Build and push the Docker image:
+   ```bash
+   docker build -t gcr.io/[PROJECT_ID]/loan-approval-app:latest .
+   docker push gcr.io/[PROJECT_ID]/loan-approval-app:latest
+   ```
+4. Deploy to Cloud Run:
+   ```bash
+   gcloud run deploy loan-approval-app \
+     --image gcr.io/[PROJECT_ID]/loan-approval-app:latest \
+     --platform managed \
+     --region us-central1 \
+     --allow-unauthenticated
+   ```
 
-### 1️⃣ Local Setup
+## 🔄 CI/CD Automation with GitHub Actions
+### 🔹 Setup
+1. Create a new service account in GCP and grant `Cloud Run Admin` and `Artifact Registry Writer` roles.
+2. Grant `iam.serviceAccounts.actAs` permission to the service account.
+3. Generate a JSON key for the service account and add it as a GitHub secret (`GCP_CREDENTIALS`).
 
-#### **Clone the Repository**
-```sh
-git clone https://github.com/your-username/loan-approval-app.git
-cd loan-approval-app
-```
+### 📜 GitHub Actions Workflow
+The CI/CD workflow (`.github/workflows/deploy.yml`) automates the build and deployment process:
+- ✅ On push to `main` branch, the workflow builds and pushes the Docker image.
+- 🚀 It then deploys the new version to Cloud Run.
 
-#### **Create Virtual Environment & Install Dependencies**
-```sh
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
+### 🔧 Adding the Workflow
+1. Create a `.github/workflows/` directory:
+   ```bash
+   mkdir -p .github/workflows
+   ```
+2. Create a `deploy.yml` file inside `.github/workflows/` with the following content:
+   ```yaml
+   name: 🚀 Deploy to Cloud Run
 
-#### **Train the Model**
-```sh
-python train_model.py
-```
+   on:
+     push:
+       branches:
+         - main
 
-#### **Run Streamlit App Locally**
-```sh
-streamlit run src/streamlit_app.py --server.port=8080
-```
-App will be available at: **http://localhost:8080**
+   jobs:
+     deploy:
+       runs-on: ubuntu-latest
 
----
+       steps:
+         - name: 🛠️ Checkout repository
+           uses: actions/checkout@v3
 
-## 🐳 Dockerization
+         - name: 🔑 Authenticate with Google Cloud
+           uses: google-github-actions/auth@v1
+           with:
+             credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
-### 2️⃣ Build & Run Docker Container
+         - name: 🐳 Configure Docker for Artifact Registry
+           run: gcloud auth configure-docker gcr.io
 
-#### **Build Docker Image**
-```sh
-docker build -t loan-approval-app .
-```
+         - name: 🔨 Build and push Docker image
+           run: |
+             docker build -t gcr.io/[PROJECT_ID]/loan-approval-app:latest .
+             docker push gcr.io/[PROJECT_ID]/loan-approval-app:latest
 
-#### **Run Container**
-```sh
-docker run -p 8080:8080 loan-approval-app
-```
-App will be accessible at: **http://localhost:8080**
+         - name: 🚀 Deploy to Cloud Run
+           run: |
+             gcloud run deploy loan-approval-app \
+               --image gcr.io/[PROJECT_ID]/loan-approval-app:latest \
+               --platform managed \
+               --region us-central1 \
+               --allow-unauthenticated
+   ```
+3. Commit and push changes:
+   ```bash
+   git add .github/workflows/deploy.yml
+   git commit -m "🚀 Added CI/CD workflow"
+   git push origin main
+   ```
 
----
+## ⚠️ Troubleshooting & Fixes
+During deployment, you may encounter permission errors. Here are the steps we followed to resolve them:
+1. **🔴 Artifact Registry Permission Error:**
+   - 🛑 Error: `Permission "artifactregistry.repositories.uploadArtifacts" denied`
+   - ✅ Solution:
+     - Go to **Google Cloud Console → IAM & Admin → IAM**.
+     - Locate the service account used (`github-actions-deploy@[PROJECT_ID].iam.gserviceaccount.com`).
+     - Assign `Artifact Registry Writer` role.
 
-## ☁️ Deploy on Google Cloud Run
+2. **🔴 Service Account IAM ActAs Permission Error:**
+   - 🛑 Error: `Permission 'iam.serviceaccounts.actAs' denied`
+   - ✅ Solution:
+     - Go to **Google Cloud Console → IAM & Admin → IAM**.
+     - Locate the service account (`github-actions-deploy@[PROJECT_ID].iam.gserviceaccount.com`).
+     - Assign `Service Account User` role.
 
-### 3️⃣ Google Cloud Setup
+3. **🔄 Manually Re-running GitHub Actions Workflow:**
+   - If a workflow fails, go to **GitHub → Actions**.
+   - Select the failed workflow.
+   - Click on "🔄 Re-run jobs" to manually restart the workflow.
 
-#### **Authenticate with Google Cloud**
-```sh
-gcloud auth login
-```
+## 🌍 Accessing the Application
+Once deployed, you will receive a URL from Cloud Run. Open it in your browser to access the **Loan Approval App**.
 
-#### **Set Project & Enable Cloud Run API**
-```sh
-gcloud config set project YOUR_PROJECT_ID
-gcloud services enable run.googleapis.com
-```
-
-#### **Build & Push Docker Image to Google Container Registry (GCR)**
-```sh
-docker tag loan-approval-app gcr.io/YOUR_PROJECT_ID/loan-approval-app:v1
-docker push gcr.io/YOUR_PROJECT_ID/loan-approval-app:v1
-```
-
-#### **Deploy to Cloud Run**
-```sh
-gcloud run deploy loan-approval-app \
-    --image gcr.io/YOUR_PROJECT_ID/loan-approval-app:v1 \
-    --platform managed \
-    --region us-central1 \
-    --allow-unauthenticated \
-    --port 8080
-```
-After deployment, the service URL will be displayed. Use it to access your app.
-
----
-
-## ⚡ Automate with GitHub Actions (CI/CD)
-
-### 4️⃣ Set Up GitHub Actions for Continuous Deployment
-
-#### **Create `.github/workflows/deploy.yml`**
-```yaml
-name: Deploy to Cloud Run
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      
-      - name: Authenticate with GCP
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Build & Push Docker Image
-        run: |
-          gcloud auth configure-docker
-          docker build -t gcr.io/YOUR_PROJECT_ID/loan-approval-app:v1 .
-          docker push gcr.io/YOUR_PROJECT_ID/loan-approval-app:v1
-
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy loan-approval-app \
-            --image gcr.io/YOUR_PROJECT_ID/loan-approval-app:v1 \
-            --platform managed \
-            --region us-central1 \
-            --allow-unauthenticated \
-            --port 8080
-```
-
-#### **GitHub Secrets to Add**
-- `GCP_SERVICE_ACCOUNT_KEY` (JSON key of your GCP service account)
-
-Once you push changes to **main**, GitHub Actions will **automatically deploy** your app to Cloud Run. 🚀
-
----
-
-## 📌 Notes
-- Ensure **PORT=8080** is set in `Dockerfile` and Cloud Run deployment.
-- Use `gcloud auth configure-docker` before pushing images to GCR.
-- Check Cloud Run logs if the deployment fails: `gcloud logs read --format=json`
+## 📝 License
+This project is licensed under the **MIT License**.
 
 ---
+💡 **For any issues, feel free to open an issue or reach out!**
 
-## 📞 Support
-If you face any issues, feel free to open an **Issue** or reach out. 😊
+### 📞 Contact
+👤 **Akshay Shitole**  
+📧 Email: [theakshayway@gmail.com](mailto:theakshayway@gmail.com)  
 
